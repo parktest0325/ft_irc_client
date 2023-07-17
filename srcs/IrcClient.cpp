@@ -1,10 +1,11 @@
 #include "IrcClient.h"
 #include <WinSock2.h>
+#include <ws2tcpip.h>
 #include <iostream>
 
 #pragma comment(lib, "ws2_32.lib")
 
-IrcClient& IrcClient::GetInst()
+IrcClient& IrcClient::GetInstance()
 {
 	static IrcClient inst;
 	return inst;
@@ -17,14 +18,32 @@ void IrcClient::Connect(const std::string _serverIp, const std::string _serverPo
 
 	struct sockaddr_in server;
 
-	server.sin_addr.s_addr = inet_addr(mServerIp.data());
 	server.sin_family = AF_INET;
 	server.sin_port = htons(stoi(mServerPort));
 
-	if (mServerFd = connect(mFd, (struct sockaddr*)&server, sizeof(server)) < 0) {
+	if (inet_pton(AF_INET, mServerIp.data(), &(server.sin_addr)) <= 0) {
+		return Error("Connect", "inet_pton()");
+	}
+
+	if (connect(mFd, (struct sockaddr*)&server, sizeof(server)) < 0) {
 		return Error("Connect", "connect()");
 	}
+
 	mMsgs.push_back(std::string("[Connect] " + mServerIp + ":" + mServerPort));
+	mRecvThread = std::thread([this]() {
+		ReceiveMsg();
+	});
+}
+
+void IrcClient::Reset()
+{
+	Release();
+	MsgsCleanup();
+}
+
+void IrcClient::SendMsg(const std::string _msg)
+{
+	send(mFd, _msg.data(), _msg.size(), NULL);
 }
 
 void IrcClient::Init()
@@ -45,19 +64,31 @@ void IrcClient::Init()
 void IrcClient::Release()
 {
 	closesocket(mFd);
-	closesocket(mServerFd);
+	mFd = 0;
 	WSACleanup();
+	mRecvThread.join();
+}
+
+void IrcClient::ReceiveMsg()
+{
+	char recvBuffer[1024];
+	int recvSize;
+	while (mFd)
+	{
+		recvSize = recv(mFd, recvBuffer, 1024 - 1, NULL);
+		recvBuffer[recvSize] = '\0';
+		mMsgs.push_back(recvBuffer);
+	}
 }
 
 void IrcClient::Error(const std::string _curMethod, const std::string _position)
 {
-	Release();
 	PrintError(_curMethod, _position);
 	return;
 }
 
 void IrcClient::PrintError(const std::string _curMethod, const std::string _position)
 {
-	mMsgs.push_back(std::string("[Fail] IrcClient:: " + _curMethod + " => " + _position));
+	mMsgs.push_back(std::string("[Fail] IrcClient::" + _curMethod + " => " + _position));
 }
 

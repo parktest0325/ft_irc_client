@@ -1,4 +1,5 @@
 #include "ClientGui.h"
+#include "IrcClient.h"
 
 void ClientGui::Draw(std::string label)
 {
@@ -15,8 +16,6 @@ void ClientGui::Draw(std::string label)
 	DrawChatInput();
 
 	ImGui::End();
-
-
 }
 
 void ClientGui::DrawMenu()
@@ -45,13 +44,20 @@ void ClientGui::DrawMenu()
 	ImGui::PopItemWidth();
 	ImGui::SameLine();
 
-	ImGui::Button("Connect");
+	if (ImGui::Button("Connect"))
+	{
+		IrcClient::GetInstance().Connect(ipBuffer, portBuffer);
+	}
+	ImGui::SameLine();
+
+	if (ImGui::Button("Reset"))
+	{
+		IrcClient::GetInstance().Reset();
+	}
 
 	ImGui::SetWindowFontScale(originalFontSize);
 
-
 	ImGui::EndChild();
-
 }
 
 void ClientGui::DrawChat()
@@ -64,8 +70,10 @@ void ClientGui::DrawChat()
 	const float originalFontSize = ImGui::GetFontSize();
 	ImGui::SetWindowFontScale(MainFontScale);
 
-	for (int i = 0 ; i < 100; ++i)
-		ImGui::Text("Test");
+	std::vector<std::string> msgs = IrcClient::GetInstance().GetMsgs();
+
+	for (std::string msg : msgs)
+		ImGui::Text(msg.data());
 
 	ImGui::SetWindowFontScale(originalFontSize);
 
@@ -82,12 +90,14 @@ void ClientGui::DrawChatInput()
 	static char textBuffer[256] = { 0, };
 	ImGui::InputText("###sendText", textBuffer, sizeof(textBuffer));
 	ImGui::SameLine();
-	ImGui::Button("Send");
+	if (ImGui::Button("Send"))
+	{
+		IrcClient::GetInstance().SendMsg(textBuffer);
+		std::memset(textBuffer, 0, sizeof(textBuffer));
+	}
 
 	ImGui::SetWindowFontScale(originalFontSize);
 	ImGui::EndChild();
-
-
 }
 
 void render(ClientGui& clientGui)
