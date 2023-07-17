@@ -1,12 +1,15 @@
+#include <iostream>
+
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
 #include "imgui.h"
 
-#include <iostream>
 #include <GLFW/glfw3.h>
 
-void render(GLFWwindow* window);
+#include "ClientGui.h"
+
+static void glfw_error_callback(int error, const char* description);
 
 void start_cycle()
 {
@@ -25,10 +28,18 @@ void end_cycle(GLFWwindow* const window)
 int main()
 {
 	// glfw 초기화
-	glfwInit(); 
+	glfwSetErrorCallback(glfw_error_callback);
+	if (!glfwInit())
+	{
+		return 1;
+	}
+
 
 	// window 만들기 (width, height, title, monitor, share)
-	GLFWwindow* window = glfwCreateWindow(640, 480, "Inyong", 0, 0);
+	GLFWwindow* window = glfwCreateWindow(
+		ClientGui::MainWindowSize.x,
+		ClientGui::MainWindowSize.y,
+		"ImIRC", 0, 0);
 
 	// context는 그리기 위한 내용을 담고 있음
 	// window가 두개이면 context가 두개일수도 있음
@@ -37,24 +48,21 @@ int main()
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	//ImGuiIO& io = ImGui::GetIO(); (void)io;
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
 
+	ClientGui client;
+
 	// 사용자가 window 창을 닫을 때까지
 	while (!glfwWindowShouldClose(window)) {
-		// window 그려주기
-		render(window);
-
 		// 마우스 움직이는 것. 이런것들 들고와서 필요한 window한테 보내주기
 		glfwPollEvents();
 		start_cycle();
 
-		ImGui::Begin("My name is window, ImGUI window");
-		ImGui::Text("Hello there adventurer!");
-		ImGui::End();
+		render(client);
+
 		ImGui::Render();
 
 		end_cycle(window);
@@ -64,11 +72,11 @@ int main()
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 
+	glfwDestroyWindow(window);
+	glfwTerminate();
 }
 
-void render(GLFWwindow* window)
-{ 
-	// 지우는 색깔 (어떤 색으로 칠할건지)
-	glClearColor(0, 0, 1, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
+void glfw_error_callback(int error, const char* description)
+{
+	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
