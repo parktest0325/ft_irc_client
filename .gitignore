@@ -7,7 +7,12 @@ x64/
 **/Release/
 **/x64/
 
+objs/
+
 ### files
 *.vcxproj
 *.vcxproj.*
 *.sln
+*.exe
+*.ini
+*.obj
