@@ -1,5 +1,6 @@
 #include "ClientGui.h"
 #include "IrcClient.h"
+#include <iostream>
 
 void ClientGui::Draw(std::string label)
 {
@@ -36,7 +37,6 @@ void ClientGui::DrawMenu()
 	ImGui::PopItemWidth();
 	ImGui::SameLine();
 
-
 	static char portBuffer[6] = { 0, };
 	constexpr static float portWidth = 7 * sizeof(portBuffer) * MainFontScale + 10.0f;
 	ImGui::PushItemWidth(portWidth);
@@ -50,9 +50,16 @@ void ClientGui::DrawMenu()
 	}
 	ImGui::SameLine();
 
-	if (ImGui::Button("Reset"))
+	if (ImGui::Button("Disconnect"))
 	{
-		IrcClient::GetInstance().Reset();
+		IrcClient::GetInstance().Disconnect();
+	}
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("ClearChat"))
+	{
+		IrcClient::GetInstance().MsgsCleanup();
 	}
 
 	ImGui::SetWindowFontScale(originalFontSize);
@@ -63,7 +70,6 @@ void ClientGui::DrawMenu()
 void ClientGui::DrawChat()
 {
 	const ImVec2 wrapperSize = ImVec2(ImGui::GetContentRegionAvail().x, 500.0f);
-
 
 	ImGui::BeginChild("###DrawChat", wrapperSize, true);
 
@@ -82,17 +88,23 @@ void ClientGui::DrawChat()
 
 void ClientGui::DrawChatInput()
 {
-
 	ImGui::BeginChild("###DrawChatInput");
 	const float originalFontSize = ImGui::GetFontSize();
 	ImGui::SetWindowFontScale(MainFontScale);
 
 	static char textBuffer[256] = { 0, };
-	ImGui::InputText("###sendText", textBuffer, sizeof(textBuffer));
+	ImGui::InputText("###sendText", textBuffer, sizeof(textBuffer) - 1);
 	ImGui::SameLine();
 	if (ImGui::Button("Send"))
 	{
 		IrcClient::GetInstance().SendMsg(textBuffer);
+		std::memset(textBuffer, 0, sizeof(textBuffer));
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Send With \\n"))
+	{
+		IrcClient::GetInstance().SendMsgWithNl(textBuffer);
 		std::memset(textBuffer, 0, sizeof(textBuffer));
 	}
 

@@ -22,12 +22,13 @@ public:
 	static IrcClient& GetInstance();
 
 	void Connect(const std::string _serverIp, const std::string _serverPort);
-	void Reset();
+	void Disconnect();
 
 	std::vector<std::string>& GetMsgs() { return mMsgs; }
 	void MsgsCleanup() { mMsgs.clear(); }
 
 	void SendMsg(const std::string _msg);
+	void SendMsgWithNl(std::string _msg);
 
 private:
 	void Init();
@@ -35,7 +36,8 @@ private:
 	void ReceiveMsg();
 
 	void Error(const std::string _curMethod, const std::string _position);
-	void PrintError(const std::string _curMethod, const std::string _position);
+	inline void PrintError(const std::string _curMethod, const std::string _position);
+	inline void PrintSystemMsg(const std::string _msg);
 
 private:
 	std::string		mServerIp;
