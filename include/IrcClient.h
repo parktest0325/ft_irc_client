@@ -39,6 +39,8 @@ private:
 	inline void PrintError(const std::string _curMethod, const std::string _position);
 	inline void PrintSystemMsg(const std::string _msg);
 
+	std::string ReplaceEscapeInString(std::string _str, std::string _delim);
+
 private:
 	std::string		mServerIp;
 	std::string		mServerPort;

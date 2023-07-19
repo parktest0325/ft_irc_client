@@ -2,6 +2,7 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include <iostream>
+#include <regex>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -56,13 +57,14 @@ void IrcClient::Disconnect()
 
 void IrcClient::SendMsg(const std::string _msg)
 {
-	std::cout << _msg << std::endl;
-	send(mFd, _msg.data(), _msg.size(), NULL);
+	std::string msg = ReplaceEscapeInString(_msg, "rn");
+	std::cout << msg << std::endl;
+	send(mFd, msg.data(), msg.size(), NULL);
 }
 
 void IrcClient::SendMsgWithNl(std::string _msg)
 {
-	_msg += '\n';
+	_msg += "\\n";
 	SendMsg(_msg);
 }
 
@@ -110,4 +112,41 @@ void IrcClient::PrintError(const std::string _curMethod, const std::string _posi
 void IrcClient::PrintSystemMsg(const std::string _msg)
 {
 	mMsgs.push_back(std::string("[System] " + _msg));
+}
+
+std::string IrcClient::ReplaceEscapeInString(std::string _str, std::string _delim)
+{
+	std::string ret;
+
+	size_t pos = 0;
+	size_t prev = 0;
+
+	// ex) "Hello\\r\\n World!! \n" => find:6, 
+	// find는 인덱스를 찾아줌
+	while ((pos = _str.find("\\", prev)) != std::string::npos)
+	{
+		ret.append(_str.substr(prev, pos - prev));
+		// find에서 NULL 값은 못찾기 때문에 NULL 체크 안해도된다.
+		if (_delim.find(_str[pos + 1]) != std::string::npos)
+		{
+			char c = _str[pos + 1];
+			switch (c)
+			{
+			case 'r':
+				ret += '\r';
+				break;
+			case 'n':
+				ret += '\n';
+				break;
+			}
+			pos++;
+		}
+		else
+		{
+			ret += '\\';
+		}
+		prev = pos + 1;
+	}
+	ret.append(_str.substr(prev));
+	return ret;
 }
