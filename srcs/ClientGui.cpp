@@ -88,24 +88,33 @@ void ClientGui::DrawChat()
 
 void ClientGui::DrawChatInput()
 {
+	const bool isPressed_shift
+		= ImGui::GetIO().KeyShift;
+	const bool isPressed_enter
+		= ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter));
+
 	ImGui::BeginChild("###DrawChatInput");
 	const float originalFontSize = ImGui::GetFontSize();
 	ImGui::SetWindowFontScale(MainFontScale);
 
 	static char textBuffer[256] = { 0, };
 	ImGui::InputText("###sendText", textBuffer, sizeof(textBuffer) - 1);
+	ImGui::SetKeyboardFocusHere(-1);
 	ImGui::SameLine();
-	if (ImGui::Button("Send"))
+	if (ImGui::Button("Send")
+		|| (isPressed_shift && isPressed_enter))
 	{
 		IrcClient::GetInstance().SendMsg(textBuffer);
 		std::memset(textBuffer, 0, sizeof(textBuffer));
 	}
 
 	ImGui::SameLine();
-	if (ImGui::Button("Send With \\n"))
+	if (ImGui::Button("Send With \\n")
+		|| (!isPressed_shift && isPressed_enter))
 	{
 		IrcClient::GetInstance().SendMsgWithNl(textBuffer);
 		std::memset(textBuffer, 0, sizeof(textBuffer));
+
 	}
 
 	ImGui::SetWindowFontScale(originalFontSize);
